@@ -1,0 +1,227 @@
+13:00
+npx create-next-app@latest my-app --typescript --tailwind --eslint
+
+npx shadcn-ui@latest init
+
+npm run dev
+
+39 clerk (auth)
+
+1:14:00
+navbar-routes
+
+1:29:00
+courses ui
+
+8:30 new database
+1:46:00 prisma
+# npm i -D prisma
+# npx prisma init
+Next steps:
+1. Set the DATABASE_URL in the .env file to point to your existing database. If your database has no tables yet, read https://pris.ly/d/getting-started
+2. Set the provider of the datasource block in schema.prisma to match your database: postgresql, 
+mysql, sqlite, sqlserver, mongodb or cockroachdb.
+3. Run prisma db pull to turn your database schema into a Prisma schema.
+4. Run prisma generate to generate the Prisma Client. You can then start querying your database. 
+
+
+db url
+prisma schema banao ==========
+auto() ~ uuid()
+@db.Text ~ @db.String
+courseId String @db.ObjectId
+
+# npm i @prisma/client
+
+#npx prisma generate
+push
+
+```
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+```
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+```
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+```
+
+
+npx prisma studio
+
+
+
+
+
+
+CLERK CSS
+/* 
+.cl-internal-1fsg6zy{
+  background-color: #FF0066;
+  border-radius: 2vmax;
+}
+.cl-internal-1fsg6zy:hover{
+  background-color: #A445B2;
+}
+
+.cl-internal-15amzqo{
+  color: #FF0066;
+  
+}
+.cl-internal-15amzqo:hover{
+  color: #A445B2;
+}
+svg{
+  display: none;
+}
+.cl-internal-11lqcp9{
+  display: none;
+}
+.cl-internal-b3fm6y {
+  background-color: #ff006600;
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider        = "prisma-client-js"
+   previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+model user{
+  id String @id @default(uuid()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  firstName String
+  lastName  String? 
+  email     String   @unique
+
+}
+model Course {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+  title String 
+  description String? 
+  imageUrl String? 
+  price Float?
+  isPublished Boolean @default(false)
+
+  categoryId String? @db.ObjectId
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  chapters Chapter[]
+  attachments Attachment[]
+  purchases Purchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@fulltext([title])
+}
+
+model Category {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique
+  courses Course[]
+}
+
+model Attachment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  url String 
+
+  courseId String @db.ObjectId
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+}
+
+model Chapter {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  title String
+  description String? 
+  videoUrl String? 
+  position Int
+  isPublished Boolean @default(false)
+  isFree Boolean @default(false)
+
+  muxData MuxData?
+
+  courseId String @db.ObjectId
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  userProgress UserProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+}
+
+model MuxData {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  assetId String
+  playbackId String?
+
+  chapterId String @unique @db.ObjectId
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model UserProgress {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+
+  chapterId String @db.ObjectId
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  isCompleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterId])
+  @@unique([userId, chapterId])
+}
+
+model Purchase {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+
+  courseId String @db.ObjectId
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+}
+
+model StripeCustomer {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique
+  stripeCustomerId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
